@@ -24,7 +24,7 @@ An open-source DIY project that bridges physical retro media with modern digital
 │   └── stl/            # Ready-to-print STL files
 ├── .gitignore          # Git exclusion rules
 └── LICENSE             # Licensing details (Dual-licensed)
-
+```
 ## Hardware & 3D Printing
 
 To build the enclosure and disks, check the hardware/ directory for the custom internal mount for the NFC reader.
