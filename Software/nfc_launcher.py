@@ -30,7 +30,7 @@ import ctypes
 import importlib
 
 # ===================================================================
-# CONFIGURACIÓ DE RUTAS D'INSTAL·LACIÓ
+# CONFIGURACIÓ DE RUTES D'INSTAL·LACIÓ
 # ===================================================================
 INSTALL_DIR = r"C:\NFC_Launcher"
 INSTALL_FILE = os.path.join(INSTALL_DIR, "nfc_launcher.py")
@@ -55,7 +55,6 @@ def elevate_privileges():
     """Reinicia el propi script sol·licitant elevació UAC a Windows."""
     if not is_admin():
         print("[INFO] Es requereixen permisos d'administrador per instal·lar. Sol·licitant-los...")
-        # Llença l'script actual amb permisos d'admin
         ctypes.windll.shell32.ShellExecuteW(
             None, "runas", sys.executable, f'"{os.path.abspath(__file__)}"', None, 1
         )
@@ -67,7 +66,6 @@ def check_and_install_dependencies():
     except ImportError:
         print("[STARTUP] Missing 'pyscard'. Instal·lant...")
         try:
-            # S'usa el flag --user com a mesura de seguretat en cas de problemes d'entorn
             subprocess.check_call([sys.executable, "-m", "pip", "install", "pyscard"])
             importlib.invalidate_caches()
             print("[STARTUP] 'pyscard' instal·lat.\n")
@@ -91,6 +89,14 @@ def install_to_system():
     print(" [INSTALL] Iniciant instal·lació al sistema...")
     print("=" * 70)
 
+    # Preguntar per la carpeta de jocs personalitzada
+    global GAME_DIR_DEFAULT
+    print(f"\nRuta per defecte per als jocs: {GAME_DIR_DEFAULT}")
+    custom_path = input("Escriu una ruta nova (o prem Enter per mantenir la per defecte): ").strip()
+    if custom_path:
+        GAME_DIR_DEFAULT = os.path.normpath(custom_path)
+        print(f" -> S'utilitzarà la ruta personalitzada: {GAME_DIR_DEFAULT}")
+
     # 1. Crear directori d'instal·lació
     os.makedirs(INSTALL_DIR, exist_ok=True)
 
@@ -107,7 +113,7 @@ def install_to_system():
                 shutil.copy2(src_json, os.path.join(INSTALL_DIR, json_file))
                 print(f" -> Còpia de la base de dades: {json_file}")
 
-    # 3. Permisos de la carpeta de jocs (ara blindat amb check=True)
+    # 3. Permisos de la carpeta de jocs
     setup_game_folder_permissions()
 
     # 4. Auto-arrencada a Windows
@@ -138,7 +144,6 @@ def setup_windows_autostart(target_script):
         launcher_file = os.path.join(startup_folder, "NFC_Floppy_AutoStart.bat")
         pythonw_exe = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
         
-        # S'afegeix l'argument --background
         bat_content = f'@echo off\nstart "" "{pythonw_exe}" "{target_script}" --background\n'
         
         with open(launcher_file, "w", encoding="utf-8") as f:
@@ -151,7 +156,6 @@ def setup_game_folder_permissions():
     target_path = os.path.normpath(GAME_DIR_DEFAULT)
     try:
         os.makedirs(target_path, exist_ok=True)
-        # S'afegeix check=True perquè falli estrepitosament si l'admin no és real
         cmd_grant = f'icacls "{target_path}" /grant *S-1-5-32-545:(OI)(CI)F /T /q'
         subprocess.run(cmd_grant, shell=True, check=True)
         print(f" -> Permisos de control total concedits a: '{target_path}'")
@@ -162,8 +166,8 @@ def setup_game_folder_permissions():
             subprocess.run(cmd_steam, shell=True, check=True)
             print(" -> Permisos ajustats a Steam per evitar problemes d'UAC.")
 
-    except subprocess.CalledProcessError ascode:
-        print(f"[ERROR CRÍTIC] Falla a l'assignar permisos amb icacls. Codi d'error: {ascode.returncode}")
+    except subprocess.CalledProcessError as code:
+        print(f"[ERROR CRÍTIC] Falla a l'assignar permisos amb icacls. Codi d'error: {code.returncode}")
 
 # ===================================================================
 # 3. LÒGICA D'UTILITAT I REGISTRE
@@ -187,7 +191,6 @@ def save_json(file_path, data):
 
 def get_galaxy_path():
     try:
-        # Usant KEY_WOW64_32KEY explícitament
         key = winreg.OpenKey(
             winreg.HKEY_LOCAL_MACHINE, 
             r"SOFTWARE\GOG.com\GalaxyClient\paths", 
@@ -219,7 +222,6 @@ def get_scummvm_path():
     except OSError:
         pass
     
-    # Fallback paths
     for p in [r"C:\Program Files\ScummVM\scummvm.exe", r"C:\Program Files (x86)\ScummVM\scummvm.exe"]:
         if os.path.exists(p): return p
     return None
@@ -360,7 +362,7 @@ class NFCGameMonitor(CardObserver):
                         
                     raw_text = "".join([chr(b) for b in raw_bytes if 32 <= b <= 126]).strip()
                     print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] NFC DETECTED: '{raw_text}'")
-                    sys.stdout.flush() # Forçar l'escriptura al log
+                    sys.stdout.flush()
                     process_nfc_input(raw_text)
             except Exception as e:
                 print(f"[ERROR] Lectura NFC: {e}")
@@ -375,8 +377,6 @@ if __name__ == "__main__":
     is_installed = os.path.abspath(__file__).lower() == INSTALL_FILE.lower()
 
     if is_background:
-        # Som el procés silenciós en segon pla (Ja instal·lat).
-        # Redirigir la sortida per evitar la fallada (NoneType) del pythonw i tenir logs
         log_handle = open(LOG_FILE, "a", encoding="utf-8")
         sys.stdout = log_handle
         sys.stderr = log_handle
@@ -398,9 +398,7 @@ if __name__ == "__main__":
             
     else:
         if not is_installed:
-            # Hem obert el fitxer des d'una ubicació externa (Ex: Descàrregues) -> Autoinstal·lar
             install_to_system()
         else:
-            # Estem executant l'arxiu instal·lat normalment però sense el paràmetre background
             print("[INFO] Aquest script normalment s'executa automàticament en segon pla.")
             input("Prem Enter per tancar-lo manualment...")
