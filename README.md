@@ -49,3 +49,6 @@ This project is dual-licensed to appropriately cover both physical design and so
     Hardware & 3D Models: Licensed under the Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
 
     Software : Licensed under the GNU General Public License v3.0 (GPLv3).
+
+
+(Example.jpg)
