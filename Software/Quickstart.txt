@@ -1,0 +1,48 @@
+===================================================================
+                     NFC GAME LAUNCHER - QUICKSTART
+===================================================================
+
+1. PREREQUISITES
+-------------------------------------------------------------------
+* Windows 10/11.
+* Python 3 installed and added to system PATH.
+* PC/SC compliant USB NFC Reader connected.
+
+
+2. SCRIPT INSTALLATION
+-------------------------------------------------------------------
+The process is now fully automated. There is no need to use the command line.
+
+1. Download 'nfc_launcher.py' (and any .json catalog files) to any folder.
+2. Double-click 'nfc_launcher.py'.
+3. Windows will prompt for Administrator privileges (UAC). Accept them.
+4. The script automatically installs to C:\NFC_Launcher, configures 
+   the C:\FloppyGames folder, sets up global startup, and launches 
+   the background service.
+5. Press ENTER when finished. You can now delete the original downloaded file.
+
+
+3. STEAM MANUAL CONFIGURATION (AFTER RUNNING THE SCRIPT)
+-------------------------------------------------------------------
+Open Steam on your primary account and set the following:
+
+1. Game Folder Path (MANDATORY):
+   Go to: Settings -> Storage
+   Add path: C:\FloppyGames
+   Click the three dots (...) next to it and select "Make Default".
+
+2. Bypass Account Selection (OPTIONAL / HIGHLY RECOMMENDED):
+   Go to: Settings -> Interface
+   DISABLE: "Ask which account to use each time Steam starts"
+   (Prevents Steam from blocking on the profile selection screen).
+
+
+4. UNINSTALLATION
+-------------------------------------------------------------------
+To completely remove the service:
+
+1. Double-click the 'uninstall.py' script.
+2. Accept the Administrator privileges prompt (UAC).
+3. The script will stop background processes, remove startup entries, 
+   and ask if you want to delete the C:\NFC_Launcher folder.
+===================================================================
