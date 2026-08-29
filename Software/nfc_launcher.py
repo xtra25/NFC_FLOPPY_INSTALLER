@@ -30,6 +30,63 @@ import ctypes
 import importlib
 
 # ===================================================================
+# SISTEMA D'IDIOMES (I18N)
+# ===================================================================
+TEXTS = {
+    'en': {
+        'req_admin': "[INFO] Administrator privileges required for installation. Requesting...",
+        'install_start': " [INSTALL] Starting system installation...",
+        'default_path': "Default game path:",
+        'custom_path_prompt': "Enter a new path (or press Enter to keep default): ",
+        'using_custom_path': " -> Using custom path:",
+        'copy_script': " -> Script copied to:",
+        'copy_db': " -> Database copied:",
+        'permissions_granted': " -> Full control permissions granted to:",
+        'steam_permissions': " -> Adjusted Steam permissions to prevent UAC issues.",
+        'icacls_error': "[CRITICAL ERROR] Failed to assign permissions with icacls. Error code:",
+        'autostart_configured': " -> Global autostart configured successfully.",
+        'autostart_failed': "[WARNING] Could not configure autostart:",
+        'install_success': " [SUCCESS] Installation completed successfully!",
+        'service_running': " [INFO] The service is now running in the background. Log file at",
+        'delete_original': " >>> YOU CAN NOW DELETE THIS ORIGINAL FILE:",
+        'press_enter_close': "Press Enter to close this window...",
+        'bg_info': "[INFO] This script normally runs automatically in the background.",
+    },
+    'ca': {
+        'req_admin': "[INFO] Es requereixen permisos d'administrador per instal·lar. Sol·licitant-los...",
+        'install_start': " [INSTALL] Iniciant instal·lació al sistema...",
+        'default_path': "Ruta per defecte per als jocs:",
+        'custom_path_prompt': "Escriu una ruta nova (o prem Enter per mantenir la per defecte): ",
+        'using_custom_path': " -> S'utilitzarà la ruta personalitzada:",
+        'copy_script': " -> Còpia de l'script a:",
+        'copy_db': " -> Còpia de la base de dades:",
+        'permissions_granted': " -> Permisos de control total concedits a:",
+        'steam_permissions': " -> Permisos ajustats a Steam per evitar problemes d'UAC.",
+        'icacls_error': "[ERROR CRÍTIC] Falla a l'assignar permisos amb icacls. Codi d'error:",
+        'autostart_configured': " -> Auto-arrencada global configurada correctament.",
+        'autostart_failed': "[WARNING] No s'ha pogut configurar l'auto-arrencada:",
+        'install_success': " [SUCCESS] Instal·lació completada amb èxit!",
+        'service_running': " [INFO] El servei ja corre en segon pla. L'arxiu log està a",
+        'delete_original': " >>> JA POTS ESBORRAR AQUEST FITXER ORIGINAL:",
+        'press_enter_close': "Prem Enter per tancar aquesta finestra...",
+        'bg_info': "[INFO] Aquest script normalment s'executa automàticament en segon pla.",
+    }
+}
+
+lang = 'ca' # Idioma per defecte inicial
+
+def T(key):
+    """Retorna el text deduït segons l'idioma seleccionat."""
+    return TEXTS.get(lang, TEXTS['ca']).get(key, key)
+
+# Obtenir idioma de paràmetres si s'està reiniciant com a Admin
+if "--lang" in sys.argv:
+    try:
+        lang = sys.argv[sys.argv.index("--lang") + 1]
+    except IndexError:
+        pass
+
+# ===================================================================
 # CONFIGURACIÓ DE RUTES D'INSTAL·LACIÓ
 # ===================================================================
 INSTALL_DIR = r"C:\NFC_Launcher"
@@ -52,26 +109,25 @@ def is_admin():
         return False
 
 def elevate_privileges():
-    """Reinicia el propi script sol·licitant elevació UAC a Windows."""
+    """Reinicia el propi script sol·licitant elevació UAC a Windows i conservant l'idioma."""
     if not is_admin():
-        print("[INFO] Es requereixen permisos d'administrador per instal·lar. Sol·licitant-los...")
-        ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, f'"{os.path.abspath(__file__)}"', None, 1
-        )
+        print(T('req_admin'))
+        params = f'"{os.path.abspath(__file__)}" --lang {lang}'
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, params, None, 1)
         sys.exit(0)
 
 def check_and_install_dependencies():
     try:
         import smartcard
     except ImportError:
-        print("[STARTUP] Missing 'pyscard'. Instal·lant...")
+        print("[STARTUP] Missing 'pyscard'. Installing... / Instal·lant...")
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "pyscard"])
             importlib.invalidate_caches()
-            print("[STARTUP] 'pyscard' instal·lat.\n")
+            print("[STARTUP] 'pyscard' Installed / Instal·lat.\n")
         except subprocess.CalledProcessError as e:
-            print(f"[CRITICAL ERROR] Error al instal·lar dependències: {e}")
-            input("Prem Enter per sortir...")
+            print(f"[CRITICAL ERROR] Dependency fail: {e}")
+            input("Press Enter to exit...")
             sys.exit(1)
 
 check_and_install_dependencies()
@@ -86,16 +142,16 @@ def install_to_system():
     elevate_privileges() # Assegura que som Admin abans de fer res
     
     print("\n" + "=" * 70)
-    print(" [INSTALL] Iniciant instal·lació al sistema...")
+    print(T('install_start'))
     print("=" * 70)
 
     # Preguntar per la carpeta de jocs personalitzada
     global GAME_DIR_DEFAULT
-    print(f"\nRuta per defecte per als jocs: {GAME_DIR_DEFAULT}")
-    custom_path = input("Escriu una ruta nova (o prem Enter per mantenir la per defecte): ").strip()
+    print(f"\n{T('default_path')} {GAME_DIR_DEFAULT}")
+    custom_path = input(T('custom_path_prompt')).strip()
     if custom_path:
         GAME_DIR_DEFAULT = os.path.normpath(custom_path)
-        print(f" -> S'utilitzarà la ruta personalitzada: {GAME_DIR_DEFAULT}")
+        print(f"{T('using_custom_path')} {GAME_DIR_DEFAULT}")
 
     # 1. Crear directori d'instal·lació
     os.makedirs(INSTALL_DIR, exist_ok=True)
@@ -104,14 +160,14 @@ def install_to_system():
     current_file = os.path.abspath(__file__)
     if current_file.lower() != INSTALL_FILE.lower():
         shutil.copy2(current_file, INSTALL_FILE)
-        print(f" -> Còpia de l'script a: {INSTALL_FILE}")
+        print(f"{T('copy_script')} {INSTALL_FILE}")
 
         # Copiar JSONs si existeixen al lloc original
         for json_file in ["floppy_disks.json", "gog_catalog_full.json"]:
             src_json = os.path.join(BASE_DIR, json_file)
             if os.path.exists(src_json):
                 shutil.copy2(src_json, os.path.join(INSTALL_DIR, json_file))
-                print(f" -> Còpia de la base de dades: {json_file}")
+                print(f"{T('copy_db')} {json_file}")
 
     # 3. Permisos de la carpeta de jocs
     setup_game_folder_permissions()
@@ -119,20 +175,20 @@ def install_to_system():
     # 4. Auto-arrencada a Windows
     setup_windows_autostart(INSTALL_FILE)
 
-    # 5. Iniciar el servei en segon pla immediatament des de la ruta instal·lada
+    # 5. Iniciar el servei en segon pla immediatament
     pythonw_exe = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
     if not os.path.exists(pythonw_exe):
-        pythonw_exe = sys.executable # Fallback
+        pythonw_exe = sys.executable
 
     subprocess.Popen([pythonw_exe, INSTALL_FILE, "--background"])
 
     print("\n" + "=" * 70)
-    print(" [SUCCESS] Instal·lació completada amb èxit!")
-    print(f" [INFO] El servei ja corre en segon pla. L'arxiu log està a {LOG_FILE}")
-    print(f"\n >>> JA POTS ESBORRAR AQUEST FITXER ORIGINAL: {current_file}")
+    print(T('install_success'))
+    print(f"{T('service_running')} {LOG_FILE}")
+    print(f"\n{T('delete_original')} {current_file}")
     print("=" * 70)
     
-    input("\nPrem Enter per tancar aquesta finestra...")
+    input(f"\n{T('press_enter_close')}")
     sys.exit(0)
 
 def setup_windows_autostart(target_script):
@@ -148,9 +204,9 @@ def setup_windows_autostart(target_script):
         
         with open(launcher_file, "w", encoding="utf-8") as f:
             f.write(bat_content)
-        print(" -> Auto-arrencada global configurada correctament.")
+        print(T('autostart_configured'))
     except Exception as e:
-        print(f"[WARNING] No s'ha pogut configurar l'auto-arrencada: {e}")
+        print(f"{T('autostart_failed')} {e}")
 
 def setup_game_folder_permissions():
     target_path = os.path.normpath(GAME_DIR_DEFAULT)
@@ -158,16 +214,16 @@ def setup_game_folder_permissions():
         os.makedirs(target_path, exist_ok=True)
         cmd_grant = f'icacls "{target_path}" /grant *S-1-5-32-545:(OI)(CI)F /T /q'
         subprocess.run(cmd_grant, shell=True, check=True)
-        print(f" -> Permisos de control total concedits a: '{target_path}'")
+        print(f"{T('permissions_granted')} '{target_path}'")
 
         steam_dir = r"C:\Program Files (x86)\Steam"
         if os.path.exists(steam_dir):
             cmd_steam = f'icacls "{steam_dir}" /grant *S-1-5-32-545:(OI)(CI)M /T /q'
             subprocess.run(cmd_steam, shell=True, check=True)
-            print(" -> Permisos ajustats a Steam per evitar problemes d'UAC.")
+            print(T('steam_permissions'))
 
     except subprocess.CalledProcessError as code:
-        print(f"[ERROR CRÍTIC] Falla a l'assignar permisos amb icacls. Codi d'error: {code.returncode}")
+        print(f"{T('icacls_error')} {code.returncode}")
 
 # ===================================================================
 # 3. LÒGICA D'UTILITAT I REGISTRE
@@ -397,8 +453,22 @@ if __name__ == "__main__":
             log_handle.close()
             
     else:
+        # Preguntar per l'idioma abans d'iniciar la instal·lació (si no estem ja instal·lats o no hem rebut el paràmetre)
+        if not is_installed and "--lang" not in sys.argv:
+            print("Select language / Selecciona l'idioma:")
+            print("1. English")
+            print("2. Català")
+            while True:
+                choice = input("Option [1/2]: ").strip()
+                if choice == '1':
+                    lang = 'en'
+                    break
+                elif choice == '2':
+                    lang = 'ca'
+                    break
+
         if not is_installed:
             install_to_system()
         else:
-            print("[INFO] Aquest script normalment s'executa automàticament en segon pla.")
-            input("Prem Enter per tancar-lo manualment...")
+            print(T('bg_info'))
+            input(T('press_enter_close'))
