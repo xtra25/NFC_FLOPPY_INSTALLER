@@ -1,48 +1,91 @@
 ===================================================================
                      NFC GAME LAUNCHER - QUICKSTART
+                              Version 2.3
 ===================================================================
 
 1. PREREQUISITES
 -------------------------------------------------------------------
 * Windows 10/11.
-* Python 3 installed and added to system PATH.
-* PC/SC compliant USB NFC Reader connected.
+* Python 3 installed. On a shared PC, install it with the
+  "Install for all users" option ticked.
+* PC/SC compliant USB NFC reader connected.
 
 
-2. SCRIPT INSTALLATION
+2. INSTALL
 -------------------------------------------------------------------
-The process is now fully automated. There is no need to use the command line.
-
-1. Download 'nfc_launcher.py' (and any .json catalog files) to any folder.
+1. Download 'nfc_launcher.py' (and any .json catalog files) to any
+   folder.
 2. Double-click 'nfc_launcher.py'.
-3. Windows will prompt for Administrator privileges (UAC). Accept them.
-4. The script automatically installs to C:\NFC_Launcher, configures 
-   the C:\FloppyGames folder, sets up global startup, and launches 
+3. Pick the language.
+4. Done. The script installs into your own user profile and starts
    the background service.
-5. Press ENTER when finished. You can now delete the original downloaded file.
+
+There is NO administrator prompt. Each user who wants the reader
+runs this once with their own account.
+
+Upgrading from version 1.x? Read section 6 first.
 
 
-3. STEAM MANUAL CONFIGURATION (AFTER RUNNING THE SCRIPT)
+3. STEAM SETTINGS (RECOMMENDED)
 -------------------------------------------------------------------
-Open Steam on your primary account and set the following:
+Settings -> Interface
+   DISABLE "Ask which account to use each time Steam starts".
+   Otherwise Steam can block on the account-selection screen when a
+   game is launched by NFC.
 
-1. Game Folder Path (MANDATORY):
-   Go to: Settings -> Storage
-   Add path: C:\FloppyGames
-   Click the three dots (...) next to it and select "Make Default".
-
-2. Bypass Account Selection (OPTIONAL / HIGHLY RECOMMENDED):
-   Go to: Settings -> Interface
-   DISABLE: "Ask which account to use each time Steam starts"
-   (Prevents Steam from blocking on the profile selection screen).
+Settings -> Storage
+   Optional. Add a games folder and set it as Default if you want
+   games installed somewhere specific. This has no effect on
+   administrator prompts.
 
 
-4. UNINSTALLATION
+4. IF A GAME ASKS FOR AN ADMIN PASSWORD ON ITS FIRST LAUNCH
 -------------------------------------------------------------------
-To completely remove the service:
+This comes from Steam's prerequisite installers (Visual C++,
+DirectX, .NET), not from the launcher or from folder permissions.
 
-1. Double-click the 'uninstall.py' script.
-2. Accept the Administrator privileges prompt (UAC).
-3. The script will stop background processes, remove startup entries, 
-   and ask if you want to delete the C:\NFC_Launcher folder.
+Diagnose it, as the affected user, in a normal (NOT administrator)
+command prompt:
+
+   python "%LOCALAPPDATA%\Programs\NFC_Launcher\nfc_launcher.py" --diag
+
+Look at these two lines:
+
+   Steam Client Service  : RUNNING
+   Claus CommonRedist    : OK (...)
+
+If either one is wrong, run this ONCE from an administrator account:
+
+   python "%LOCALAPPDATA%\Programs\NFC_Launcher\nfc_launcher.py" --prep
+
+Then run --diag again to confirm. The fix is machine-wide, so it
+only has to be done once for all users.
+
+Games with kernel-level anti-cheat (EasyAntiCheat, BattlEye) will
+always need an administrator for their first launch. That cannot be
+avoided.
+
+
+5. UNINSTALL
+-------------------------------------------------------------------
+1. Double-click 'nfc_launcher.py' again.
+2. Choose option 1 (Uninstall).
+3. It asks separately whether to delete the log and the game-name
+   cache, so you can keep them across a reinstall.
+
+No administrator prompt.
+
+
+6. UPGRADING FROM VERSION 1.x
+-------------------------------------------------------------------
+Version 1.x installed to C:\NFC_Launcher for the whole machine. The
+new per-user uninstaller cannot remove that, and if it is left in
+place you end up with two services fighting over the same reader.
+
+   1. As an administrator, run 'uninstall.py' once to remove the old
+      C:\NFC_Launcher installation and its all-users startup entry.
+   2. As an administrator, run 'nfc_launcher.py --fix-redist' once.
+   3. As each user, run 'nfc_launcher.py' normally.
+
+'--diag' will warn you if any version 1.x leftovers are still there.
 ===================================================================
