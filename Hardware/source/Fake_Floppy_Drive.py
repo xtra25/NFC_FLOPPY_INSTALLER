@@ -503,7 +503,17 @@ RET_LEN = 20.0
 RET_TIP_MARGIN = 4.0        # bump sits this far short of the free tip
 RET_ARM = RET_LEN - RET_TIP_MARGIN   # the real bending length
 RET_GAP = 0.8   # gap around the tongue on three sides
-RET_RELIEF_Z0 = 14.0
+# The tongue is an island: at its first layer it is 6.6 x 20 mm attached to
+# the body only at its root, so it has nothing to start on and the layer
+# droops. That matters -- thickness is cubed in the stiffness, and 0.2 mm of
+# droop halves the retention.
+#
+# So the relief is taken all the way down to the NFC rebate instead of being
+# a closed pocket. That turns it into a shaft open at the underside: the
+# slicer fills it with support from the build plate, and the support pulls
+# out from below before the NFC cover goes on. Both shafts end up under the
+# cover, and both clear the reader bay (2.15 and 0.90 mm) and the outer wall.
+RET_RELIEF_Z0 = NFC_REBATE
 
 RET_BUMP_H = 1.2   # must exceed the thinner disk's clearance
 RET_BUMP_R0 = 1.5
@@ -729,8 +739,12 @@ for sx, sy in SCREWS:
     bool_op(case_base, cyl_z(M3_CLR, Z_SPLIT + 2*OVERSHOOT, (sx, sy, Z_SPLIT/2)))
     countersink(case_base, (sx, sy), 0.0, upward=True)
 
+# Blind sockets for the dowels. Sliding fit here and in the plate, press fit
+# only in the top shell, so the base drops on without fighting the alignment.
 for px, py in DOWELS:
     _z0, _z1 = Z_SPLIT - DOWEL_DEPTH_BASE, Z_SPLIT + OVERSHOOT
+    bool_op(case_base, cyl_z(DOWEL_R + DOWEL_FIT_SLIDE, _z1 - _z0,
+                             (px, py, (_z0 + _z1)/2)))
 
 disk_cy = (DISK_REAR_Y + DISK_D/2 if SHOW_DISK_INSERTED
            else bezel_front - 14.0 - DISK_D/2)
