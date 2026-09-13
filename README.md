@@ -36,7 +36,8 @@ To build the enclosure and disks, check the hardware/ directory for the custom i
 ## Software Setup
 Prerequisites
 
-    Python 3.x installed on your system.
+    Python 3.10 – 3.13 (3.13 recommended).installed on your system. 
+		*Python 3.14 and newer have no prebuilt pyscard wheel yet and will try to compile from source. 
 
     A compatible NFC reader connected via USB (e.g., RC522 or PN532-based setups, depending on your configuration).
 	
